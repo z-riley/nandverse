@@ -1,1 +1,2 @@
-pub mod gates;
+pub mod gate;
+pub mod latch;
