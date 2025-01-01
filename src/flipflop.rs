@@ -1,4 +1,4 @@
-use crate::gate;
+use crate::gate::{and, not};
 use crate::latch;
 
 /// Edge-triggered D flip-flop
@@ -19,7 +19,7 @@ impl DFlipflop {
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
     pub fn update(&mut self, clk: bool, d: bool) {
-        self.master.set(gate::not(&clk), d);
+        self.master.set(not(&clk), d);
         self.slave.set(clk, self.master.q());
     }
 
@@ -33,6 +33,72 @@ impl DFlipflop {
 }
 
 impl Default for DFlipflop {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Edge-triggered SR flip-flop
+pub struct SRFlipflop {
+    master: latch::SRLatch,
+    slave: latch::SRLatch,
+}
+
+impl SRFlipflop {
+    /// Creates a new SR flip-flop in the reset state.
+    pub fn new() -> Self {
+        SRFlipflop {
+            master: latch::SRLatch::new(),
+            slave: latch::SRLatch::new(),
+        }
+    }
+
+    /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
+    /// clock.
+    pub fn update(&mut self, clk: bool, s: bool, r: bool) {
+        self.master.set(and(&[s, not(&clk)]), and(&[r, not(&clk)]));
+        dbg!(self.master.q());
+        self.slave
+            .set(and(&[self.master.q(), clk]), and(&[self.master.qn(), clk]));
+    }
+
+    pub fn q(&self) -> bool {
+        self.slave.q()
+    }
+
+    pub fn qn(&self) -> bool {
+        self.slave.qn()
+    }
+}
+
+pub struct JKFlipflop {
+    sr_flipflop: SRFlipflop,
+}
+
+impl JKFlipflop {
+    /// Creates a new JK flip-flop in the reset state.
+    pub fn new() -> Self {
+        JKFlipflop {
+            sr_flipflop: SRFlipflop::new(),
+        }
+    }
+
+    /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
+    /// clock.
+    pub fn update(&mut self, clk: bool, d: bool) {
+        todo!()
+    }
+
+    pub fn q(&self) -> bool {
+        self.sr_flipflop.q()
+    }
+
+    pub fn qn(&self) -> bool {
+        self.sr_flipflop.qn()
+    }
+}
+
+impl Default for JKFlipflop {
     fn default() -> Self {
         Self::new()
     }
@@ -85,6 +151,65 @@ mod tests {
         clk = true;
         expect_q = false;
         flipflop.update(clk, d);
+        assert_eq!(flipflop.q(), expect_q);
+    }
+
+    #[test]
+    fn test_sr_flipflop() {
+        let mut flipflop = SRFlipflop::new();
+
+        // Start with Q low
+        let mut expect_q = false;
+        assert_eq!(flipflop.q(), expect_q);
+
+        let mut clk = true;
+        let mut s = false;
+        let mut r = false;
+
+        // Send clock rising edge with S and R low
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock falling edge with S and R low
+        clk = false;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Set S high but don't toggle clock
+        s = true;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock rising edge with S high
+        clk = true;
+        expect_q = true;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock falling edge
+        clk = false;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Set R high but don't toggle clock
+        r = true;
+        s = false;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock rising edge with R high
+        clk = true;
+        expect_q = false;
+        flipflop.update(clk, s, r);
+        assert_eq!(flipflop.q(), expect_q);
+    }
+
+    #[test]
+    fn test_jk_flipflop() {
+        let mut flipflop = JKFlipflop::new();
+
+        // Start with Q low
+        let mut expect_q = false;
         assert_eq!(flipflop.q(), expect_q);
     }
 }
