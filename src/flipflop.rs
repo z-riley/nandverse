@@ -57,7 +57,6 @@ impl SRFlipflop {
     /// clock.
     pub fn update(&mut self, clk: bool, s: bool, r: bool) {
         self.master.set(and(&[s, not(&clk)]), and(&[r, not(&clk)]));
-        dbg!(self.master.q());
         self.slave
             .set(and(&[self.master.q(), clk]), and(&[self.master.qn(), clk]));
     }
@@ -68,6 +67,12 @@ impl SRFlipflop {
 
     pub fn qn(&self) -> bool {
         self.slave.qn()
+    }
+}
+
+impl Default for SRFlipflop {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -85,8 +90,12 @@ impl JKFlipflop {
 
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
-    pub fn update(&mut self, clk: bool, d: bool) {
-        todo!()
+    pub fn update(&mut self, clk: bool, j: bool, k: bool) {
+        let s = and(&[self.sr_flipflop.q(), j]);
+        let r = and(&[self.sr_flipflop.qn(), k]);
+        // FIXME: SWAPPING q() and qn() FIXES AN EARLIER TEST BUT BREAKS THE LAST ONE (TOGGLE)
+
+        self.sr_flipflop.update(clk, s, r);
     }
 
     pub fn q(&self) -> bool {
@@ -210,6 +219,60 @@ mod tests {
 
         // Start with Q low
         let mut expect_q = false;
+        assert_eq!(flipflop.q(), expect_q);
+
+        let mut clk = true;
+        let mut j = false;
+        let mut k = false;
+
+        // Send clock rising edge with J and K low
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock falling edge with J and K low
+        clk = false;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Set J high but don't toggle clock
+        j = true;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock rising edge with J high
+        clk = true;
+        expect_q = true;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock falling edge
+        clk = false;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Set K high but don't toggle clock
+        k = true;
+        j = false;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock rising edge with K high
+        clk = true;
+        expect_q = false;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock falling edge with J and K high
+        clk = false;
+        j = true;
+        k = true;
+        flipflop.update(clk, j, k);
+        assert_eq!(flipflop.q(), expect_q);
+
+        // Send clock rising edge with J and K high
+        clk = true;
+        expect_q = true;
+        flipflop.update(clk, j, k);
         assert_eq!(flipflop.q(), expect_q);
     }
 }
