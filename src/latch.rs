@@ -67,10 +67,8 @@ impl DLatch {
 
     /// Set the enable and data inputs
     pub fn set(&mut self, e: bool, d: bool) {
-        let dn = gate::not(&d);
-        let s = gate::and(&[d, e]);
-        let r = gate::and(&[dn, e]);
-        self.sr_latch.set(s, r);
+        self.sr_latch
+            .set(gate::and(&[d, e]), gate::and(&[gate::not(&d), e]));
     }
 
     pub fn q(&self) -> bool {
@@ -114,7 +112,12 @@ mod tests {
             // Send test signals
             latch.set(s, r);
 
-            assert_eq!(latch.q(), q_expected, "failed for inputs: {:?}", (s, r))
+            assert_eq!(
+                latch.q(),
+                q_expected,
+                "failed for inputs: {:?}",
+                (q_init, s, r)
+            )
         }
     }
 
@@ -144,7 +147,12 @@ mod tests {
             // Send test signals
             latch.set(e, d);
 
-            assert_eq!(latch.q(), q_expected, "failed for inputs: {:?}", (e, d))
+            assert_eq!(
+                latch.q(),
+                q_expected,
+                "failed for inputs: {:?}",
+                (q_init, e, d)
+            )
         }
     }
 }
