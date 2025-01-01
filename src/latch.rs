@@ -16,6 +16,16 @@ impl SRLatch {
             panic!("restricted combination");
         }
 
+        self.qn = gate::nor(&[self.q, s]);
+        self.q = gate::nor(&[r, self.qn]);
+    }
+
+    /// Alternative set function using nand gates
+    pub fn set_nand(&mut self, s: bool, r: bool) {
+        if s && r {
+            panic!("restricted combination");
+        }
+
         if s {
             // Qn must be evaluated first if set is high
             self.q = gate::nand(&[gate::not(&s), self.qn]);
@@ -29,6 +39,10 @@ impl SRLatch {
 
     pub fn q(&self) -> bool {
         self.q
+    }
+
+    pub fn qn(&self) -> bool {
+        self.qn
     }
 }
 
