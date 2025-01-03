@@ -1,41 +1,72 @@
-use crate::gate::{and, nand, nor, not};
+use crate::gate::{and, nand, not};
 
-pub struct SRLatch {
-    q: bool,
-    qn: bool,
+/// Active high SR latch with the following truth table:
+///
+/// | S | R | Q |
+/// | - | - | - |
+/// | 0 | 0 | Q |
+/// | 0 | 1 | 0 |
+/// | 1 | 0 | 1 |
+/// | 1 | 1 | ? |
+pub struct SRLatchActiveHigh {
+    sr_latch_active_low: SRLatchActiveLow,
 }
 
-impl SRLatch {
+impl SRLatchActiveHigh {
     /// Creates a new SR latch in the reset state
     pub fn new() -> Self {
-        SRLatch { q: false, qn: true }
+        SRLatchActiveHigh {
+            sr_latch_active_low: SRLatchActiveLow::new(),
+        }
     }
 
     /// Set the set and reset inputs
     pub fn set(&mut self, s: bool, r: bool) {
-        if s && r {
-            panic!("restricted combination");
-        }
-
-        self.qn = nor(&[self.q, s]);
-        self.q = nor(&[r, self.qn]);
+        self.sr_latch_active_low.set(not(&s), not(&r))
     }
 
-    /// Alternative set function using nand gates
-    pub fn set_nand(&mut self, s: bool, r: bool) {
-        if s && r {
+    pub fn q(&self) -> bool {
+        self.sr_latch_active_low.q()
+    }
+
+    pub fn qn(&self) -> bool {
+        self.sr_latch_active_low.qn()
+    }
+}
+
+impl Default for SRLatchActiveHigh {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Active low SR latch with the following truth table:
+///
+/// | S | R | Q |
+/// | - | - | - |
+/// | 0 | 0 | ? |
+/// | 0 | 1 | 1 |
+/// | 1 | 0 | 0 |
+/// | 1 | 1 | Q |
+pub struct SRLatchActiveLow {
+    q: bool,
+    qn: bool,
+}
+
+impl SRLatchActiveLow {
+    /// Creates a new SR latch in the reset state
+    pub fn new() -> Self {
+        SRLatchActiveLow { q: false, qn: true }
+    }
+
+    /// Set the set and reset inputs
+    pub fn set(&mut self, s: bool, r: bool) {
+        if !s && !r {
             panic!("restricted combination");
         }
 
-        if s {
-            // Qn must be evaluated first if set is high
-            self.q = nand(&[not(&s), self.qn]);
-            self.qn = nand(&[self.q, not(&r)]);
-        } else if r {
-            // Q must be evaluated first if reset is high
-            self.qn = nand(&[self.q, not(&r)]);
-            self.q = nand(&[not(&s), self.qn]);
-        }
+        self.qn = nand(&[self.q, r]);
+        self.q = nand(&[s, self.qn]);
     }
 
     pub fn q(&self) -> bool {
@@ -47,21 +78,22 @@ impl SRLatch {
     }
 }
 
-impl Default for SRLatch {
+impl Default for SRLatchActiveLow {
     fn default() -> Self {
         Self::new()
     }
 }
 
+// Gated active high SR latch
 pub struct GatedSRLatch {
-    sr_latch: SRLatch,
+    sr_latch: SRLatchActiveHigh,
 }
 
 impl GatedSRLatch {
     /// Creates a new gated SR latch in the reset state
     pub fn new() -> Self {
         GatedSRLatch {
-            sr_latch: SRLatch::new(),
+            sr_latch: SRLatchActiveHigh::new(),
         }
     }
 
@@ -85,15 +117,23 @@ impl Default for GatedSRLatch {
     }
 }
 
+// Active high D latch with the following truth table:
+///
+/// | E | D | Q |
+/// | - | - | - |
+/// | 0 | 0 | Q |
+/// | 0 | 1 | Q |
+/// | 1 | 1 | 0 |
+/// | 1 | 0 | 1 |
 pub struct DLatch {
-    sr_latch: SRLatch,
+    sr_latch: SRLatchActiveHigh,
 }
 
 impl DLatch {
     /// Creates a new D latch in the reset state.
     pub fn new() -> Self {
         DLatch {
-            sr_latch: SRLatch::new(),
+            sr_latch: SRLatchActiveHigh::new(),
         }
     }
 
@@ -122,7 +162,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_sr_latch() {
+    fn test_sr_latch_active_high() {
         for (q_init, s, r, q_expected) in [
             // Hold state
             (false, false, false, false),
@@ -134,13 +174,42 @@ mod tests {
             (false, true, false, true),
             (true, true, false, true),
         ] {
-            // Set up initial state
-            let mut latch = SRLatch {
+            let mut latch = SRLatchActiveHigh {
+                sr_latch_active_low: SRLatchActiveLow {
+                    q: q_init,
+                    qn: !q_init,
+                },
+            };
+
+            latch.set(s, r);
+
+            assert_eq!(
+                latch.q(),
+                q_expected,
+                "failed for inputs: {:?}",
+                (q_init, s, r)
+            )
+        }
+    }
+
+    #[test]
+    fn test_sr_latch_active_low() {
+        for (q_init, s, r, q_expected) in [
+            // Hold state
+            (false, true, true, false),
+            (true, true, true, true),
+            // Reset
+            (false, true, false, false),
+            (true, true, false, false),
+            // Set
+            (false, false, true, true),
+            (true, false, true, true),
+        ] {
+            let mut latch = SRLatchActiveLow {
                 q: q_init,
                 qn: !q_init,
             };
 
-            // Send test signals
             latch.set(s, r);
 
             assert_eq!(
@@ -174,15 +243,15 @@ mod tests {
             (false, true, false, false, false),
             (true, true, false, false, true),
         ] {
-            // Set up initial state
             let mut latch = GatedSRLatch {
-                sr_latch: SRLatch {
-                    q: q_init,
-                    qn: !q_init,
+                sr_latch: SRLatchActiveHigh {
+                    sr_latch_active_low: SRLatchActiveLow {
+                        q: q_init,
+                        qn: !q_init,
+                    },
                 },
             };
 
-            // Send test signals
             latch.set(s, e, r);
 
             assert_eq!(
@@ -209,15 +278,15 @@ mod tests {
             (false, true, true, true),
             (true, true, true, true),
         ] {
-            // Set up initial state
             let mut latch = DLatch {
-                sr_latch: SRLatch {
-                    q: q_init,
-                    qn: !q_init,
+                sr_latch: SRLatchActiveHigh {
+                    sr_latch_active_low: SRLatchActiveLow {
+                        q: q_init,
+                        qn: !q_init,
+                    },
                 },
             };
 
-            // Send test signals
             latch.set(e, d);
 
             assert_eq!(

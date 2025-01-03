@@ -8,7 +8,7 @@ pub struct DFlipflop {
 }
 
 impl DFlipflop {
-    /// Creates a new D flip-flop in the reset state.
+    /// Creates a new D flip-flop in the reset state
     pub fn new() -> Self {
         DFlipflop {
             master: latch::DLatch::new(),
@@ -40,25 +40,24 @@ impl Default for DFlipflop {
 
 /// Edge-triggered SR flip-flop
 pub struct SRFlipflop {
-    master: latch::SRLatch,
-    slave: latch::SRLatch,
+    master: latch::GatedSRLatch,
+    slave: latch::GatedSRLatch,
 }
 
 impl SRFlipflop {
-    /// Creates a new SR flip-flop in the reset state.
+    /// Creates a new gated SR flip-flop in the reset state
     pub fn new() -> Self {
         SRFlipflop {
-            master: latch::SRLatch::new(),
-            slave: latch::SRLatch::new(),
+            master: latch::GatedSRLatch::new(),
+            slave: latch::GatedSRLatch::new(),
         }
     }
 
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
     pub fn update(&mut self, clk: bool, s: bool, r: bool) {
-        self.master.set(and(&[s, not(&clk)]), and(&[r, not(&clk)]));
-        self.slave
-            .set(and(&[self.master.q(), clk]), and(&[self.master.qn(), clk]));
+        self.master.set(s, not(&clk), r);
+        self.slave.set(self.master.q(), clk, self.master.qn());
     }
 
     pub fn q(&self) -> bool {
@@ -81,7 +80,7 @@ pub struct JKFlipflop {
 }
 
 impl JKFlipflop {
-    /// Creates a new JK flip-flop in the reset state.
+    /// Creates a new JK flip-flop in the reset state
     pub fn new() -> Self {
         JKFlipflop {
             sr_flipflop: SRFlipflop::new(),
@@ -91,9 +90,8 @@ impl JKFlipflop {
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
     pub fn update(&mut self, clk: bool, j: bool, k: bool) {
-        let s = and(&[self.sr_flipflop.q(), j]);
-        let r = and(&[self.sr_flipflop.qn(), k]);
-        // FIXME: SWAPPING q() and qn() FIXES AN EARLIER TEST BUT BREAKS THE LAST ONE (TOGGLE)
+        let s = and(&[j, self.sr_flipflop.qn()]);
+        let r = and(&[k, self.sr_flipflop.q()]);
 
         self.sr_flipflop.update(clk, s, r);
     }
