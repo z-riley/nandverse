@@ -7,7 +7,8 @@ use crate::gate::{and, nand, not};
 /// | 0 | 0 | Q |
 /// | 0 | 1 | 0 |
 /// | 1 | 0 | 1 |
-/// | 1 | 1 | ? |
+/// | 1 | 1 | X |
+#[derive(Clone, Copy, Debug)]
 pub struct SRLatchActiveHigh {
     sr_latch_active_low: SRLatchActiveLow,
 }
@@ -48,6 +49,7 @@ impl Default for SRLatchActiveHigh {
 /// | 0 | 1 | 1 |
 /// | 1 | 0 | 0 |
 /// | 1 | 1 | Q |
+#[derive(Clone, Copy, Debug)]
 pub struct SRLatchActiveLow {
     q: bool,
     qn: bool,
@@ -61,12 +63,16 @@ impl SRLatchActiveLow {
 
     /// Set the set and reset inputs
     pub fn set(&mut self, s: bool, r: bool) {
-        if !s && !r {
-            panic!("restricted combination");
-        }
+        assert!(s | r, "restricted combination");
 
-        self.qn = nand(&[self.q, r]);
-        self.q = nand(&[s, self.qn]);
+        // Propagate the signal from the first gate to change
+        if !s {
+            self.q = nand(&[s, self.qn]);
+            self.qn = nand(&[self.q, r]);
+        } else if !r {
+            self.qn = nand(&[self.q, r]);
+            self.q = nand(&[s, self.qn]);
+        }
     }
 
     pub fn q(&self) -> bool {
@@ -85,6 +91,7 @@ impl Default for SRLatchActiveLow {
 }
 
 // Gated active high SR latch
+#[derive(Clone, Copy)]
 pub struct GatedSRLatch {
     sr_latch: SRLatchActiveHigh,
 }
@@ -117,14 +124,15 @@ impl Default for GatedSRLatch {
     }
 }
 
-// Active high D latch with the following truth table:
+/// Active high D latch with the following truth table:
 ///
 /// | E | D | Q |
 /// | - | - | - |
 /// | 0 | 0 | Q |
 /// | 0 | 1 | Q |
-/// | 1 | 1 | 0 |
-/// | 1 | 0 | 1 |
+/// | 1 | 0 | 0 |
+/// | 1 | 1 | 1 |
+#[derive(Debug)]
 pub struct DLatch {
     sr_latch: SRLatchActiveHigh,
 }
@@ -215,6 +223,13 @@ mod tests {
             assert_eq!(
                 latch.q(),
                 q_expected,
+                "failed for inputs: {:?}",
+                (q_init, s, r)
+            );
+
+            assert_eq!(
+                latch.qn(),
+                !q_expected,
                 "failed for inputs: {:?}",
                 (q_init, s, r)
             )
