@@ -309,6 +309,13 @@ mod tests {
                 q_expected,
                 "failed for inputs: {:?}",
                 (q_init, e, d)
+            );
+
+            assert_eq!(
+                latch.qn(),
+                !q_expected,
+                "failed for inputs: {:?}",
+                (q_init, e, d)
             )
         }
     }

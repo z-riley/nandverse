@@ -1,7 +1,8 @@
 use crate::gate::{and, not};
 use crate::latch;
 
-/// Edge-triggered D flip-flop
+/// Rising edge triggered D flip-flop
+#[derive(Debug)]
 pub struct DFlipflop {
     master: latch::DLatch,
     slave: latch::DLatch,
@@ -18,6 +19,8 @@ impl DFlipflop {
 
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
+    ///
+    /// Note: D must be set to true before the CLK signal changes.
     pub fn update(&mut self, clk: bool, d: bool) {
         self.master.set(not(&clk), d);
         self.slave.set(clk, self.master.q());
@@ -39,6 +42,7 @@ impl Default for DFlipflop {
 }
 
 /// Edge-triggered SR flip-flop
+#[derive(Clone, Copy)]
 pub struct SRFlipflop {
     master: latch::GatedSRLatch,
     slave: latch::GatedSRLatch,
@@ -75,6 +79,7 @@ impl Default for SRFlipflop {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct JKFlipflop {
     sr_flipflop: SRFlipflop,
 }
