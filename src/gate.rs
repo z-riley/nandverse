@@ -7,28 +7,38 @@ pub fn nand(inputs: &[bool]) -> bool {
 }
 
 pub fn and(inputs: &[bool]) -> bool {
-    not(&nand(inputs))
+    not(nand(inputs))
 }
 
-pub fn not(input: &bool) -> bool {
-    nand(&[*input, *input])
+pub fn not(input: bool) -> bool {
+    nand(&[input, input])
 }
 
 pub fn or(inputs: &[bool]) -> bool {
-    nand(&inputs.iter().map(not).collect::<Vec<bool>>())
+    nand(
+        &inputs
+            .iter()
+            .map(|input: &bool| not(*input))
+            .collect::<Vec<bool>>(),
+    )
 }
 
 pub fn nor(inputs: &[bool]) -> bool {
-    not(&or(inputs))
+    not(or(inputs))
 }
 
 pub fn xor(inputs: &[bool]) -> bool {
-    not(&xnor(inputs))
+    not(xnor(inputs))
 }
 
 pub fn xnor(inputs: &[bool]) -> bool {
     nand(&[
-        nand(&inputs.iter().map(not).collect::<Vec<bool>>()),
+        nand(
+            &inputs
+                .iter()
+                .map(|input: &bool| not(*input))
+                .collect::<Vec<bool>>(),
+        ),
         nand(inputs),
     ])
 }
@@ -65,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_not() {
-        for (input, expected) in [(&true, false), (&false, true)] {
+        for (input, expected) in [(true, false), (false, true)] {
             assert_eq!(not(input), expected, "failed for input: {:?}", input)
         }
     }

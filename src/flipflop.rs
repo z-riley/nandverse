@@ -22,7 +22,7 @@ impl DFlipflop {
     ///
     /// Note: D must be set to true before the CLK signal changes.
     pub fn update(&mut self, clk: bool, d: bool) {
-        self.master.set(not(&clk), d);
+        self.master.set(not(clk), d);
         self.slave.set(clk, self.master.q());
     }
 
@@ -65,7 +65,7 @@ impl SRFlipflop {
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
     pub fn update(&mut self, clk: bool, s: bool, r: bool) {
-        self.master.set(s, not(&clk), r);
+        self.master.set(s, not(clk), r);
         self.slave.set(self.master.q(), clk, self.master.qn());
     }
 

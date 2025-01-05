@@ -23,7 +23,7 @@ impl SRLatchActiveHigh {
 
     /// Set the set and reset inputs
     pub fn set(&mut self, s: bool, r: bool) {
-        self.sr_latch_active_low.set(not(&s), not(&r))
+        self.sr_latch_active_low.set(not(s), not(r))
     }
 
     pub fn clear(&mut self) {
@@ -156,7 +156,7 @@ impl DLatch {
 
     /// Set the enable and data inputs
     pub fn set(&mut self, e: bool, d: bool) {
-        self.sr_latch.set(and(&[d, e]), and(&[not(&d), e]));
+        self.sr_latch.set(and(&[d, e]), and(&[not(d), e]));
     }
 
     pub fn clear(&mut self) {

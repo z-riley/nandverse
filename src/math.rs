@@ -1,7 +1,4 @@
-use crate::{
-    counter,
-    gate::{and, or, xor},
-};
+use crate::gate::{and, or, xor};
 
 /// Perform a half add operation. Returns the sum and carry bits
 pub fn half_add(a: bool, b: bool) -> (bool, bool) {
