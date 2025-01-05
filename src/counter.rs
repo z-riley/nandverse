@@ -15,6 +15,12 @@ impl<const N: usize> RippleCounter<N> {
         counter
     }
 
+    fn init(&mut self) {
+        // Set the clock to false to avoid the race condition that occurs when setting D and CLK
+        // high simultaneously
+        self.update(false);
+    }
+
     /// Update the counter with a new input
     pub fn update(&mut self, clk: bool) {
         // Feed the clock signal into the LSB flip-flop
@@ -26,7 +32,7 @@ impl<const N: usize> RippleCounter<N> {
         }
     }
 
-    /// Clear the value of the counter
+    /// Reset the counter to zero
     pub fn clear(&mut self) {
         for i in 0..self.flipflops.len() {
             self.flipflops[i].clear();
@@ -34,21 +40,15 @@ impl<const N: usize> RippleCounter<N> {
         self.init();
     }
 
-    fn init(&mut self) {
-        // Set the clock to false to avoid the race condition that occurs when setting D and CLK
-        // high simultaneously
-        self.update(false);
-    }
-
-    // FIXME: MAKE THIS WORK FOR ALL WHOLE NUMBERS
-    pub fn value<T: From<u64>>(&self) -> T {
+    /// Get the value of the counter
+    pub fn value<T: TryFrom<u64>>(&self) -> Result<T, T::Error> {
         let mut val = 0u64;
         for (i, ff) in self.flipflops.iter().enumerate() {
             let q = ff.q();
             val |= if q { 1 << i } else { 0 };
         }
 
-        val.into()
+        T::try_from(val)
     }
 }
 
@@ -65,8 +65,8 @@ mod tests {
     #[test]
     fn test_ripple_counter() {
         const WIDTH: usize = 8;
-        let mut counter: RippleCounter<8> = RippleCounter::<WIDTH>::new();
-        assert_eq!(counter.value::<u64>(), 0);
+        let mut counter = RippleCounter::<WIDTH>::new();
+        assert_eq!(counter.value::<u64>().unwrap(), 0);
 
         // Count up to a number within the range of a counter
         let num_toggles = 100;
@@ -74,11 +74,11 @@ mod tests {
             counter.update(true);
             counter.update(false);
         }
-        assert_eq!(counter.value::<u64>(), num_toggles);
+        assert_eq!(counter.value::<u64>().unwrap(), num_toggles);
 
         // Clear the counter
         counter.clear();
-        assert_eq!(counter.value::<u64>(), 0);
+        assert_eq!(counter.value::<u64>().unwrap(), 0);
 
         // Count up to a number above the capacity of the counter. The value should overflow
         let num_toggles = 300;
@@ -87,8 +87,6 @@ mod tests {
             counter.update(false);
         }
         let max_count: u64 = 2u64.pow(WIDTH as u32);
-        assert_eq!(counter.value::<u64>(), num_toggles % max_count);
-
-        let a = counter.value::<u32>();
+        assert_eq!(counter.value::<u64>().unwrap(), num_toggles % max_count);
     }
 }
