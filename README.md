@@ -1,2 +1,3 @@
-# NANDLAND - digital design emulator
+# NANDLAND - Digital design emulator
 
+WIP
