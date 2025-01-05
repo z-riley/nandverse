@@ -11,10 +11,7 @@ impl<const N: usize> RippleCounter<N> {
             flipflops: core::array::from_fn(|_| DFlipflop::new()),
         };
 
-        // Set the clock to false to avoid the race condition that occurs when setting D and CLK
-        // high simultaneously
-        counter.update(false);
-
+        counter.init();
         counter
     }
 
@@ -27,6 +24,20 @@ impl<const N: usize> RippleCounter<N> {
         for i in 1..self.flipflops.len() {
             self.flipflops[i].update(self.flipflops[i - 1].qn(), self.flipflops[i].qn());
         }
+    }
+
+    /// Clear the value of the counter
+    pub fn clear(&mut self) {
+        for i in 0..self.flipflops.len() {
+            self.flipflops[i].clear();
+        }
+        self.init();
+    }
+
+    fn init(&mut self) {
+        // Set the clock to false to avoid the race condition that occurs when setting D and CLK
+        // high simultaneously
+        self.update(false);
     }
 
     // FIXME: MAKE THIS WORK FOR ALL WHOLE NUMBERS
@@ -65,15 +76,19 @@ mod tests {
         }
         assert_eq!(counter.value::<u64>(), num_toggles);
 
-        let mut counter = RippleCounter::<WIDTH>::new();
+        // Clear the counter
+        counter.clear();
+        assert_eq!(counter.value::<u64>(), 0);
 
-        // Count up to a number above the capacity of the counter. The value shuold overflow
+        // Count up to a number above the capacity of the counter. The value should overflow
         let num_toggles = 300;
         for _ in 0..num_toggles {
             counter.update(true);
             counter.update(false);
         }
-        let max_count: u64 = 2u64.pow(WIDTH as u32).into();
+        let max_count: u64 = 2u64.pow(WIDTH as u32);
         assert_eq!(counter.value::<u64>(), num_toggles % max_count);
+
+        let a = counter.value::<u32>();
     }
 }

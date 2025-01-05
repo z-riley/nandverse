@@ -26,6 +26,10 @@ impl SRLatchActiveHigh {
         self.sr_latch_active_low.set(not(&s), not(&r))
     }
 
+    pub fn clear(&mut self) {
+        self.sr_latch_active_low.clear();
+    }
+
     pub fn q(&self) -> bool {
         self.sr_latch_active_low.q()
     }
@@ -65,7 +69,7 @@ impl SRLatchActiveLow {
     pub fn set(&mut self, s: bool, r: bool) {
         assert!(s | r, "restricted combination");
 
-        // Propagate the signal from the first gate to change
+        // Propagate the signal from the first affected gate
         if !s {
             self.q = nand(&[s, self.qn]);
             self.qn = nand(&[self.q, r]);
@@ -73,6 +77,11 @@ impl SRLatchActiveLow {
             self.qn = nand(&[self.q, r]);
             self.q = nand(&[s, self.qn]);
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.q = false;
+        self.qn = true;
     }
 
     pub fn q(&self) -> bool {
@@ -148,6 +157,10 @@ impl DLatch {
     /// Set the enable and data inputs
     pub fn set(&mut self, e: bool, d: bool) {
         self.sr_latch.set(and(&[d, e]), and(&[not(&d), e]));
+    }
+
+    pub fn clear(&mut self) {
+        self.sr_latch.clear();
     }
 
     pub fn q(&self) -> bool {

@@ -26,6 +26,11 @@ impl DFlipflop {
         self.slave.set(clk, self.master.q());
     }
 
+    pub fn clear(&mut self) {
+        self.master.clear();
+        self.slave.clear();
+    }
+
     pub fn q(&self) -> bool {
         self.slave.q()
     }
@@ -79,6 +84,7 @@ impl Default for SRFlipflop {
     }
 }
 
+/// Rising edge triggered JK flip-flop
 #[derive(Clone, Copy)]
 pub struct JKFlipflop {
     sr_flipflop: SRFlipflop,
