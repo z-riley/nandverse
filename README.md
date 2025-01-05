@@ -1,3 +1,2 @@
-# nandverse
+# NANDLAND - digital design emulator
 
-How much can I build from vitual NAND gates?
