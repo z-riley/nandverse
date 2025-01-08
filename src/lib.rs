@@ -1,3 +1,4 @@
+pub mod bus;
 pub mod counter;
 pub mod flipflop;
 pub mod gate;
