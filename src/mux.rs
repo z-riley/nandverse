@@ -31,19 +31,42 @@ pub fn mux8(select: &[bool; 3], input: &[bool; 8]) -> bool {
 
 /// Returns the input but corresponding to the select value (little-endian)
 pub fn mux16(select: &[bool; 4], input: &[bool; 16]) -> bool {
-    // Chain together mux2 and mux8
-    todo!()
+    mux2(
+        select[3],
+        &[
+            mux8(
+                select[..3].try_into().unwrap(),
+                input[0..8].try_into().unwrap(),
+            ),
+            mux8(
+                select[..3].try_into().unwrap(),
+                input[8..16].try_into().unwrap(),
+            ),
+        ],
+    )
 }
 
 /// Returns the input but corresponding to the select value (little-endian)
 pub fn mux32(select: &[bool; 5], input: &[bool; 32]) -> bool {
-    // Chain together mux4 and mux8
-    todo!()
+    mux2(
+        select[4],
+        &[
+            mux16(
+                select[..4].try_into().unwrap(),
+                input[0..16].try_into().unwrap(),
+            ),
+            mux16(
+                select[..4].try_into().unwrap(),
+                input[16..].try_into().unwrap(),
+            ),
+        ],
+    )
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::bus;
 
     #[test]
     fn test_mux2() {
@@ -57,7 +80,7 @@ mod test {
                 mux2(select, &input),
                 expect,
                 "failed for inputs: {:?}",
-                input
+                (select, input)
             )
         }
     }
@@ -74,20 +97,110 @@ mod test {
                 mux4(&select, &input),
                 expect,
                 "failed for inputs: {:?}",
-                input
+                (select, input)
             )
         }
     }
 
     #[test]
     fn test_mux8() {
-        for (select, input, expect) in [] {
-            todo!();
+        for (select, input, expect) in [
+            ([false, false, false], bus::u8_to_bus(0b0000_0000), false),
+            ([true, false, false], bus::u8_to_bus(0b0000_0010), true),
+            ([false, true, false], bus::u8_to_bus(0b0000_0100), true),
+            ([false, true, false], bus::u8_to_bus(0b0000_1000), false),
+        ] {
             assert_eq!(
                 mux8(&select, &input),
                 expect,
                 "failed for inputs: {:?}",
-                input
+                (select, input)
+            )
+        }
+    }
+
+    #[test]
+    fn test_mux16() {
+        for (select, input, expect) in [
+            (
+                [false, false, false, false],
+                bus::u16_to_bus(0b0000_0000_0000_0000),
+                false,
+            ),
+            (
+                [true, false, false, false],
+                bus::u16_to_bus(0b0000_0000_0000_0010),
+                true,
+            ),
+            (
+                [false, true, false, false],
+                bus::u16_to_bus(0b0000_0000_0000_0100),
+                true,
+            ),
+            (
+                [false, true, false, false],
+                bus::u16_to_bus(0b0000_0000_0000_1000),
+                false,
+            ),
+            (
+                [false, false, false, true],
+                bus::u16_to_bus(0b0000_0001_0000_0000),
+                true,
+            ),
+            (
+                [true, true, true, true],
+                bus::u16_to_bus(0b1000_0000_0000_0010),
+                true,
+            ),
+            (
+                [true, true, true, true],
+                bus::u16_to_bus(0b0000_0000_0000_0000),
+                false,
+            ),
+        ] {
+            assert_eq!(
+                mux16(&select, &input),
+                expect,
+                "failed for inputs: {:?}",
+                (select, input)
+            )
+        }
+    }
+
+    #[test]
+    fn test_mux32() {
+        for (select, input, expect) in [
+            (
+                [false, false, false, false, false],
+                bus::u32_to_bus(0b0000_0000_0000_0000_0000_0000_0000_0000),
+                false,
+            ),
+            (
+                [true, false, false, false, false],
+                bus::u32_to_bus(0b0000_0000_0000_0000_0000_0000_0000_0010),
+                true,
+            ),
+            (
+                [false, false, false, true, false],
+                bus::u32_to_bus(0b0000_0000_0000_0000_0000_0001_0000_0000),
+                true,
+            ),
+            (
+                [false, false, false, true, true],
+                bus::u32_to_bus(0b0000_0001_0000_0000_0000_0000_0000_0000),
+                true,
+            ),
+            (
+                [true, true, true, true, true],
+                bus::u32_to_bus(0b0111_1111_1111_1111_1111_1111_1111_1111),
+                false,
+            ),
+        ] {
+            assert_eq!(
+                mux32(&select, &input),
+                expect,
+                "failed for inputs: {:?}",
+                (select, input)
             )
         }
     }
