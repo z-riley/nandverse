@@ -1,130 +1,33 @@
 use core::ops::BitOrAssign;
 use num::PrimInt;
 
-#[derive(Clone, Copy, Debug)]
-/// Represents a collection of parallel signals. Can be read or written to as an integer value
-pub struct Bus<const N: usize> {
-    bits: [bool; N],
+pub fn bus_to_u8(bits: [bool; 8]) -> u8 {
+    bus_to_num(bits)
 }
 
-impl<const N: usize> TryFrom<u8> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
+pub fn bus_to_u16(bits: [bool; 16]) -> u16 {
+    bus_to_num(bits)
 }
 
-impl<const N: usize> TryFrom<u16> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: u16) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
+pub fn bus_to_u32(bits: [bool; 32]) -> u32 {
+    bus_to_num(bits)
 }
 
-impl<const N: usize> TryFrom<u32> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: u32) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
+pub fn bus_to_u64(bits: [bool; 64]) -> u64 {
+    bus_to_num(bits)
 }
 
-impl<const N: usize> TryFrom<i8> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: i8) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
-}
-
-impl<const N: usize> TryFrom<i16> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: i16) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
-}
-
-impl<const N: usize> TryFrom<i32> for Bus<N> {
-    type Error = &'static str;
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
-        bus_from_num(value)
-    }
-}
-
-fn bus_from_num<const N: usize, T: PrimInt>(value: T) -> Result<Bus<N>, &'static str> {
-    if !fits_in_bits(value, N) {
-        return Err("value doesn't fit into bus");
-    }
-
-    let mut bits = [false; N];
-    (0..N.min(u32::BITS as usize)).for_each(|i| {
-        bits[i] = (value >> i & T::from(1).unwrap()) == T::from(1).unwrap();
-    });
-
-    Ok(Bus { bits })
-}
-
-/// Returns whether type T can fit into n bits
-fn fits_in_bits<T>(_: T, n: usize) -> bool {
-    std::mem::size_of::<T>() * 8 <= n
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for u8 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for u16 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for u32 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for i8 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for i16 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-impl<const N: usize> TryFrom<Bus<N>> for i32 {
-    type Error = &'static str;
-
-    fn try_from(value: Bus<N>) -> Result<Self, Self::Error> {
-        num_from_bus(value)
-    }
-}
-
-fn num_from_bus<const N: usize, T: PrimInt + BitOrAssign<T>>(
-    bus: Bus<N>,
-) -> Result<T, &'static str> {
+fn bus_to_num<const N: usize, T>(bus: [bool; N]) -> T
+where
+    T: PrimInt + BitOrAssign<T>,
+{
     let mut val: T = T::from(0).unwrap();
 
-    if !fits_in_type(N, val) {
-        return Err("bus doesn't fit into value");
+    if std::mem::size_of::<T>() * 8 > N {
+        unreachable!("bus doesn't fit into value");
     }
 
-    for (i, bit) in bus.bits.iter().enumerate() {
+    for (i, bit) in bus.iter().enumerate() {
         val |= if *bit {
             T::from(1).unwrap() << i
         } else {
@@ -132,12 +35,39 @@ fn num_from_bus<const N: usize, T: PrimInt + BitOrAssign<T>>(
         };
     }
 
-    Ok(val)
+    val
 }
 
-/// Returns whether n bits can fit into type T  
-fn fits_in_type<T>(n: usize, _: T) -> bool {
-    n <= std::mem::size_of::<T>() * 8
+pub fn u8_to_bus(value: u8) -> [bool; 8] {
+    to_bus(value)
+}
+
+pub fn u16_to_bus(value: u16) -> [bool; 16] {
+    to_bus(value)
+}
+
+pub fn u32_to_bus(value: u32) -> [bool; 32] {
+    to_bus(value)
+}
+
+pub fn u64_to_bus(value: u64) -> [bool; 64] {
+    to_bus(value)
+}
+
+pub fn to_bus<const N: usize, T>(value: T) -> [bool; N]
+where
+    T: PrimInt,
+{
+    if std::mem::size_of::<T>() > N {
+        unreachable!("value doesn't fit into bus");
+    }
+
+    let mut bits = [false; N];
+    (0..N).for_each(|i| {
+        bits[i] = (value >> i & T::from(1).unwrap()) == T::from(1).unwrap();
+    });
+
+    bits
 }
 
 #[cfg(test)]
@@ -145,41 +75,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_fits() {
-        assert!(fits_in_bits(1u8, 8));
-        assert!(!fits_in_bits(1u32, 31));
-        assert!(!fits_in_bits(-1i64, 60));
+    fn test_to_val() {
+        assert_eq!(bus_to_u32([true; 32]), u32::MAX);
+        assert_eq!(
+            bus_to_u8([true, false, true, false, false, false, false, false]),
+            5
+        );
     }
 
     #[test]
-    fn test_try_from_u32() {
-        let bus = Bus::<32>::try_from(0);
-        assert!(bus.is_ok());
-
-        let bus = Bus::<6>::try_from(255);
-        assert!(bus.is_err());
-    }
-
-    #[test]
-    fn test_try_from_bus() {
-        // Bus into number
-        let bus = Bus { bits: [true; 32] };
-        let val: Result<u32, _> = bus.try_into();
-        assert!(val.is_ok());
-        assert_eq!(val.unwrap(), u32::MAX);
-
-        // Bus too large for number type
-        let bus = Bus { bits: [true; 16] };
-        let val: Result<u8, _> = bus.try_into();
-        assert!(val.is_err());
-
-        // Bus from number
-        let bus = Bus::<8>::try_from(101u8).unwrap();
-        let val = u8::try_from(bus);
-        assert!(val.is_ok());
-
-        // Check value
-        let val: u32 = bus.try_into().unwrap();
-        assert_eq!(val, 101);
+    fn test_to_bus() {
+        let n = 64;
+        assert_eq!(bus_to_u8(u8_to_bus(n)), n);
     }
 }
