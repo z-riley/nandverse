@@ -101,10 +101,11 @@ impl JKFlipflop {
     /// Updates the flip-flop based on new inputs. The flip-flop triggers on the rising edge of the
     /// clock.
     pub fn update(&mut self, clk: bool, j: bool, k: bool) {
-        let s = and(&[j, self.sr_flipflop.qn()]);
-        let r = and(&[k, self.sr_flipflop.q()]);
-
-        self.sr_flipflop.update(clk, s, r);
+        self.sr_flipflop.update(
+            clk,
+            and(&[j, self.sr_flipflop.qn()]),
+            and(&[k, self.sr_flipflop.q()]),
+        );
     }
 
     pub fn q(&self) -> bool {

@@ -44,8 +44,7 @@ impl<const N: usize> RippleCounter<N> {
     pub fn value<T: TryFrom<u64>>(&self) -> Result<T, T::Error> {
         let mut val = 0u64;
         for (i, ff) in self.flipflops.iter().enumerate() {
-            let q = ff.q();
-            val |= if q { 1 << i } else { 0 };
+            val |= if ff.q() { 1 << i } else { 0 };
         }
 
         T::try_from(val)

@@ -24,9 +24,7 @@ impl<const N: usize> RippleCarryAdder<N> {
         let mut sum = 0u64;
         let mut carry = false;
         for i in 0..N {
-            let a_bit = (a >> i) & 1 == 1;
-            let b_bit = (b >> i) & 1 == 1;
-            let (s, cout) = full_add(a_bit, b_bit, carry);
+            let (s, cout) = full_add((a >> i) & 1 == 1, (b >> i) & 1 == 1, carry);
             carry = cout;
             sum |= if s { 1 << i } else { 0 };
         }
