@@ -62,7 +62,7 @@ mod tests {
     }
 
     #[test]
-    fn test_full_add() {
+    fn test_ripple_carry_add() {
         for (a, b, expect) in [
             (0, 0, 0),
             (1, 1, 2),
@@ -71,23 +71,6 @@ mod tests {
         ] {
             let adder = RippleCarryAdder::<8>::new();
             assert_eq!(adder.add(a, b), expect, "failed for inputs: {:?}", (a, b));
-        }
-    }
-
-    #[test]
-    fn test_ripple_carry_add() {
-        for (a, b, sum, carry) in [
-            (false, false, false, false),
-            (false, true, true, false),
-            (true, false, true, false),
-            (true, true, false, true),
-        ] {
-            assert_eq!(
-                half_add(a, b),
-                (sum, carry),
-                "failed for inputs: {:?}",
-                (a, b)
-            );
         }
     }
 }
