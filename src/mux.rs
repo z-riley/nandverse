@@ -5,7 +5,7 @@ pub fn mux2(select: bool, input: &[bool; 2]) -> bool {
     or(&[and(&[not(select), input[0]]), and(&[select, input[1]])])
 }
 
-/// Returns the input but corresponding to the select value (little-endian)
+/// Returns the input bit corresponding to the select value (little-endian)
 pub fn mux4(select: &[bool; 2], input: &[bool; 4]) -> bool {
     or(&[
         and(&[input[0], not(select[0]), not(select[1])]),
@@ -15,7 +15,7 @@ pub fn mux4(select: &[bool; 2], input: &[bool; 4]) -> bool {
     ])
 }
 
-/// Returns the input but corresponding to the select value (little-endian)
+/// Returns the input bit corresponding to the select value (little-endian)
 pub fn mux8(select: &[bool; 3], input: &[bool; 8]) -> bool {
     or(&[
         and(&[input[0], not(select[0]), not(select[1]), not(select[2])]),
@@ -29,7 +29,7 @@ pub fn mux8(select: &[bool; 3], input: &[bool; 8]) -> bool {
     ])
 }
 
-/// Returns the input but corresponding to the select value (little-endian)
+/// Returns the input bit corresponding to the select value (little-endian)
 pub fn mux16(select: &[bool; 4], input: &[bool; 16]) -> bool {
     mux2(
         select[3],
@@ -46,7 +46,7 @@ pub fn mux16(select: &[bool; 4], input: &[bool; 16]) -> bool {
     )
 }
 
-/// Returns the input but corresponding to the select value (little-endian)
+/// Returns the input bit corresponding to the select value (little-endian)
 pub fn mux32(select: &[bool; 5], input: &[bool; 32]) -> bool {
     mux2(
         select[4],
