@@ -1,16 +1,19 @@
-pub fn nand(inputs: &[bool]) -> bool {
-    if inputs.len() < 2 {
-        panic!("undefined behaviour");
+pub const fn nand(inputs: &[bool]) -> bool {
+    let mut i = 0;
+    while i < inputs.len() {
+        if !inputs[i] {
+            return true;
+        }
+        i += 1;
     }
-
-    !inputs.iter().all(|&x| x)
+    false
 }
 
-pub fn and(inputs: &[bool]) -> bool {
+pub const fn and(inputs: &[bool]) -> bool {
     not(nand(inputs))
 }
 
-pub fn not(input: bool) -> bool {
+pub const fn not(input: bool) -> bool {
     nand(&[input, input])
 }
 
@@ -50,6 +53,8 @@ mod tests {
     #[test]
     fn test_nand() {
         for (inputs, expected) in [
+            (&[false][..], true),
+            (&[true][..], false),
             (&[false, false][..], true),
             (&[false, true][..], true),
             (&[true, true][..], false),
