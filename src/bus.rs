@@ -64,7 +64,7 @@ where
 
     let mut bits = [false; N];
     (0..N).for_each(|i| {
-        bits[i] = (value >> i & T::from(1).unwrap()) == T::from(1).unwrap();
+        bits[i] = ((value >> i) & T::from(1).unwrap()) == T::from(1).unwrap();
     });
 
     bits

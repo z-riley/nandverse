@@ -17,33 +17,33 @@ pub const fn not(input: bool) -> bool {
     nand(&[input, input])
 }
 
-pub fn or(inputs: &[bool]) -> bool {
-    nand(
-        &inputs
-            .iter()
-            .map(|input: &bool| not(*input))
-            .collect::<Vec<bool>>(),
-    )
+pub const fn or<const N: usize>(inputs: &[bool; N]) -> bool {
+    let mut inverted = [false; N];
+    let mut i = 0;
+    while i < inputs.len() {
+        inverted[i] = not(inputs[i]);
+        i += 1;
+    }
+
+    nand(&inverted)
 }
 
-pub fn nor(inputs: &[bool]) -> bool {
+pub const fn nor<const N: usize>(inputs: &[bool; N]) -> bool {
     not(or(inputs))
 }
 
-pub fn xor(inputs: &[bool]) -> bool {
+pub const fn xor<const N: usize>(inputs: &[bool; N]) -> bool {
     not(xnor(inputs))
 }
 
-pub fn xnor(inputs: &[bool]) -> bool {
-    nand(&[
-        nand(
-            &inputs
-                .iter()
-                .map(|input: &bool| not(*input))
-                .collect::<Vec<bool>>(),
-        ),
-        nand(inputs),
-    ])
+pub const fn xnor<const N: usize>(inputs: &[bool; N]) -> bool {
+    let mut inverted = [false; N];
+    let mut i = 0;
+    while i < N {
+        inverted[i] = not(inputs[i]);
+        i += 1;
+    }
+    nand(&[nand(&inverted), nand(inputs)])
 }
 
 #[cfg(test)]
@@ -88,12 +88,14 @@ mod tests {
     #[test]
     fn test_or() {
         for (inputs, expected) in [
-            (&[false, false][..], false),
-            (&[false, true][..], true),
-            (&[true, true][..], true),
-            (&[true, false, false][..], true),
-            (&[true, true, true][..], true),
+            (&[false, false], false),
+            (&[false, true], true),
+            (&[true, true], true),
         ] {
+            assert_eq!(or(inputs), expected, "failed for inputs: {:?}", inputs)
+        }
+
+        for (inputs, expected) in [(&[true, false, false], true), (&[true, true, true], true)] {
             assert_eq!(or(inputs), expected, "failed for inputs: {:?}", inputs)
         }
     }
@@ -101,12 +103,14 @@ mod tests {
     #[test]
     fn test_nor() {
         for (inputs, expected) in [
-            (&[false, false][..], true),
-            (&[false, true][..], false),
-            (&[true, true][..], false),
-            (&[true, false, false][..], false),
-            (&[true, true, true][..], false),
+            (&[false, false], true),
+            (&[false, true], false),
+            (&[true, true], false),
         ] {
+            assert_eq!(nor(inputs), expected, "failed for inputs: {:?}", inputs)
+        }
+
+        for (inputs, expected) in [(&[true, false, false], false), (&[true, true, true], false)] {
             assert_eq!(nor(inputs), expected, "failed for inputs: {:?}", inputs)
         }
     }
@@ -114,12 +118,14 @@ mod tests {
     #[test]
     fn test_xor() {
         for (inputs, expected) in [
-            (&[false, true][..], true),
-            (&[true, true][..], false),
-            (&[false, false][..], false),
-            (&[true, false, false][..], true),
-            (&[true, true, true][..], false),
+            (&[false, true], true),
+            (&[true, true], false),
+            (&[false, false], false),
         ] {
+            assert_eq!(xor(inputs), expected, "failed for inputs: {:?}", inputs)
+        }
+
+        for (inputs, expected) in [(&[true, false, false], true), (&[true, true, true], false)] {
             assert_eq!(xor(inputs), expected, "failed for inputs: {:?}", inputs)
         }
     }
@@ -127,12 +133,14 @@ mod tests {
     #[test]
     fn test_xnor() {
         for (inputs, expected) in [
-            (&[false, false][..], true),
-            (&[false, true][..], false),
-            (&[true, true][..], true),
-            (&[true, false, false][..], false),
-            (&[true, true, true][..], true),
+            (&[false, false], true),
+            (&[false, true], false),
+            (&[true, true], true),
         ] {
+            assert_eq!(xnor(inputs), expected, "failed for inputs: {:?}", inputs)
+        }
+
+        for (inputs, expected) in [(&[true, false, false], false), (&[true, true, true], true)] {
             assert_eq!(xnor(inputs), expected, "failed for inputs: {:?}", inputs)
         }
     }
