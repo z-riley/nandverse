@@ -2,30 +2,26 @@ use core::ops::BitOrAssign;
 use num::PrimInt;
 
 pub fn bus_to_u8(bits: [bool; 8]) -> u8 {
-    bus_to_num(bits)
+    bus_to_num(&bits)
 }
 
 pub fn bus_to_u16(bits: [bool; 16]) -> u16 {
-    bus_to_num(bits)
+    bus_to_num(&bits)
 }
 
 pub fn bus_to_u32(bits: [bool; 32]) -> u32 {
-    bus_to_num(bits)
+    bus_to_num(&bits)
 }
 
 pub fn bus_to_u64(bits: [bool; 64]) -> u64 {
-    bus_to_num(bits)
+    bus_to_num(&bits)
 }
 
-fn bus_to_num<const N: usize, T>(bus: [bool; N]) -> T
+pub fn bus_to_num<T>(bus: &[bool]) -> T
 where
     T: PrimInt + BitOrAssign<T>,
 {
     let mut val: T = T::from(0).unwrap();
-
-    if std::mem::size_of::<T>() * 8 > N {
-        unreachable!("bus doesn't fit into value");
-    }
 
     for (i, bit) in bus.iter().enumerate() {
         val |= if *bit {
